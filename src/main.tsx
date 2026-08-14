@@ -20,7 +20,7 @@ function makeButton(label:string,primary=false){
 function ensureGateLogo(){
   const logo=document.querySelector<HTMLImageElement>(".gate-logo img");
   if(!logo) return;
-  logo.src="/personal-management-logo.svg";
+  logo.src="/personal-management.png";
   logo.alt="퍼스널매니지먼트";
   logo.style.cssText="display:block;width:100%;height:auto;object-fit:contain";
 }
@@ -38,7 +38,7 @@ function addMainHeaderLogo(){
 
   const logo=document.createElement("img");
   logo.className="main-brand-logo";
-  logo.src="/personal-management-logo.svg";
+  logo.src="/personal-management.png";
   logo.alt="퍼스널매니지먼트";
   logo.style.cssText="height:42px;width:auto;max-width:190px;object-fit:contain;display:block;flex:0 0 auto";
 
