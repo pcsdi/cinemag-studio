@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 180" role="img" aria-labelledby="title desc">
+  <title id="title">Personal Management</title>
+  <desc id="desc">Personal Management blue and red brand logo</desc>
+  <rect width="980" height="180" fill="#ffffff"/>
+  <g transform="translate(28 24)">
+    <path d="M70 8c43 0 70 20 70 54 0 36-28 58-74 58H37V91h29c25 0 39-10 39-28 0-17-13-27-36-27H37v100H8V8h62Z" fill="#1f3f7f"/>
+    <path d="M114 25c26 5 46 17 57 36-20-13-42-18-64-15-11 2-24 7-37 15 12-23 25-35 44-36Z" fill="#1f3f7f"/>
+    <path d="M47 74c24 11 54 16 85 12 27-4 50-14 67-29-12 28-39 50-74 57-31 7-63 2-86-12-15-9-25-20-30-33 11 3 23 5 38 5Z" fill="#d14135"/>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="66" letter-spacing="4">
+    <text x="245" y="110" fill="#1f3f7f">PERSONAL</text>
+    <text x="590" y="110" fill="#d14135">MANAGEMENT</text>
+  </g>
+</svg>
