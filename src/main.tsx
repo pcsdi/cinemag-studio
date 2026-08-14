@@ -54,7 +54,10 @@ function addSceneProductionControls(){
     const openBtn=makeButton("↗ GOOGLE VIDS 열기",true);
     openBtn.onclick=()=>window.open("https://vids.google.com/","_blank","noopener,noreferrer");
 
-    actions.append(imageBtn,vidsBtn,openBtn);
+    const dreaminaBtn=makeButton("↗ DREAMINA 열기");
+    dreaminaBtn.onclick=()=>window.open("https://dreamina.capcut.com/","_blank","noopener,noreferrer");
+
+    actions.append(imageBtn,vidsBtn,openBtn,dreaminaBtn);
     wrap.append(note,actions);
     promptSection.insertAdjacentElement("afterend",wrap);
   });
