@@ -17,6 +17,30 @@ function makeButton(label:string,primary=false){
   return b;
 }
 
+function addMainHeaderLogo(){
+  const brand=document.querySelector<HTMLElement>(".appbar .brand");
+  if(!brand || brand.querySelector(".main-brand-logo")) return;
+
+  const title=brand.querySelector<HTMLElement>(".brand-title");
+  const sub=brand.querySelector<HTMLElement>(".brand-sub");
+  const textWrap=document.createElement("div");
+  textWrap.className="main-brand-text";
+  if(title) textWrap.appendChild(title);
+  if(sub) textWrap.appendChild(sub);
+
+  const logo=document.createElement("img");
+  logo.className="main-brand-logo";
+  logo.src="/personal-management.png";
+  logo.alt="퍼스널매니지먼트";
+  logo.style.cssText="height:38px;width:auto;max-width:150px;object-fit:contain;display:block;flex:0 0 auto";
+
+  brand.style.display="flex";
+  brand.style.alignItems="center";
+  brand.style.gap="12px";
+  brand.prepend(textWrap);
+  brand.prepend(logo);
+}
+
 function addSceneProductionControls(){
   document.querySelectorAll<HTMLElement>(".scene-card").forEach((card)=>{
     if(card.querySelector(".scene-production-controls")) return;
@@ -138,6 +162,7 @@ function addDreaminaProductionSection(){
 }
 
 function refreshProductionControls(){
+  addMainHeaderLogo();
   addSceneProductionControls();
   addDreaminaProductionSection();
 }
