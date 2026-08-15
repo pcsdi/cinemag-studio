@@ -7,13 +7,19 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode><App /></React.StrictMode>
 );
 
-function makeButton(label:string,primary=false){
+const URLS = {
+  chatgpt: "https://chatgpt.com/",
+  gemini: "https://gemini.google.com/app?hl=ko",
+  flow: "https://labs.google/fx/ko/tools/flow",
+};
+
+function button(label:string, primary=false){
   const b=document.createElement("button");
   b.type="button";
   b.textContent=label;
   b.style.cssText=primary
-    ?"padding:11px 16px;border:0;border-radius:4px;background:#d94b35;color:white;font-weight:700;cursor:pointer"
-    :"padding:11px 16px;border:1px solid #d8cfc5;border-radius:4px;background:white;color:#342d28;font-weight:600;cursor:pointer";
+    ? "padding:10px 14px;border:0;border-radius:8px;background:#304674;color:#fff;font-weight:800;cursor:pointer"
+    : "padding:10px 14px;border:1px solid #ccd4e2;border-radius:8px;background:#fff;color:#304674;font-weight:700;cursor:pointer";
   return b;
 }
 
@@ -28,20 +34,17 @@ function ensureGateLogo(){
 function addMainHeaderLogo(){
   const brand=document.querySelector<HTMLElement>(".appbar .brand");
   if(!brand || brand.querySelector(".main-brand-logo")) return;
-
   const title=brand.querySelector<HTMLElement>(".brand-title");
   const sub=brand.querySelector<HTMLElement>(".brand-sub");
   const textWrap=document.createElement("div");
   textWrap.className="main-brand-text";
   if(title) textWrap.appendChild(title);
   if(sub) textWrap.appendChild(sub);
-
   const logo=document.createElement("img");
   logo.className="main-brand-logo";
   logo.src="/personal-management.png";
   logo.alt="퍼스널매니지먼트";
   logo.style.cssText="height:42px;width:auto;max-width:190px;object-fit:contain;display:block;flex:0 0 auto";
-
   brand.style.display="flex";
   brand.style.alignItems="center";
   brand.style.gap="12px";
@@ -49,133 +52,133 @@ function addMainHeaderLogo(){
   brand.prepend(logo);
 }
 
-function addSceneProductionControls(){
-  document.querySelectorAll<HTMLElement>(".scene-card").forEach((card)=>{
-    if(card.querySelector(".scene-production-controls")) return;
+function currentVideoPrompt(card:HTMLElement){
+  const promptSection=card.querySelector<HTMLElement>(".prompt-section");
+  return card.querySelector<HTMLElement>(".prompt")?.innerText.trim()
+    || promptSection?.querySelector<HTMLTextAreaElement>("textarea")?.value.trim()
+    || "";
+}
+
+function imagePromptFrom(videoPrompt:string){
+  let p=videoPrompt.trim();
+  if(!p) return "";
+  p=p
+    .replace(/Create Scene\s*\d*\s*of one continuous cinematic[^.]*\./gi,"Create ONE photorealistic cinematic still image.")
+    .replace(/Create ONE continuous[^.]*video\./gi,"Create ONE photorealistic cinematic still image.")
+    .replace(/Animate this image[^.]*\./gi,"")
+    .replace(/VIDEO PROMPT:?/gi,"")
+    .replace(/CAMERA MOVEMENT:[\s\S]*?(?=\n[A-Z][A-Z ]+:|$)/gi,"")
+    .replace(/DURATION:[\s\S]*?(?=\n[A-Z][A-Z ]+:|$)/gi,"")
+    .trim();
+  return `Create ONE photorealistic cinematic still image.\n\n${p}\n\nSTILL IMAGE RULES: Freeze one decisive, physically plausible instant. Keep the same protagonist face, age, hairstyle, body type, clothing, shoes, accessories, props and environment established by the story. No motion instructions, no scene transitions, no subtitles, no titles, no logos, no watermarks, no split panels.`;
+}
+
+async function copyText(text:string,label:string){
+  if(!text){alert("복사할 프롬프트가 없습니다.");return;}
+  try{
+    await navigator.clipboard.writeText(text);
+    alert(`${label}을 복사했습니다.`);
+  }catch{
+    const ta=document.createElement("textarea");
+    ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();
+    alert(`${label}을 복사했습니다.`);
+  }
+}
+
+function promptPanel(title:string, guide:string, initial:string, tools:{label:string,url:string,primary?:boolean}[]){
+  const panel=document.createElement("div");
+  panel.style.cssText="border:1px solid #dbe1eb;border-radius:12px;background:#f9fbff;padding:16px;display:grid;gap:12px";
+
+  const top=document.createElement("div");
+  top.style.cssText="display:flex;align-items:flex-start;justify-content:space-between;gap:12px";
+  const heading=document.createElement("div");
+  heading.innerHTML=`<strong style=\"display:block;color:#304674;font-size:14px\">${title}</strong><span style=\"display:block;margin-top:4px;color:#6b7280;font-size:12px;line-height:1.5\">${guide}</span>`;
+  const edit=button("수정");
+  top.append(heading,edit);
+
+  const textarea=document.createElement("textarea");
+  textarea.value=initial;
+  textarea.readOnly=true;
+  textarea.rows=8;
+  textarea.style.cssText="width:100%;resize:vertical;border:1px solid #d7dee9;border-radius:8px;background:#fff;padding:12px;line-height:1.6;font-size:12px;color:#374151;outline:none";
+
+  edit.onclick=()=>{
+    textarea.readOnly=!textarea.readOnly;
+    if(!textarea.readOnly){
+      edit.textContent="수정 완료";
+      textarea.focus();
+      textarea.style.borderColor="#506A9C";
+      textarea.style.background="#fff";
+    }else{
+      edit.textContent="수정";
+      textarea.style.borderColor="#d7dee9";
+      alert("수정 내용을 현재 화면에 반영했습니다. 저장되지는 않습니다.");
+    }
+  };
+
+  const actions=document.createElement("div");
+  actions.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+  const copy=button("프롬프트 복사",true);
+  copy.onclick=()=>copyText(textarea.value, title);
+  actions.appendChild(copy);
+  tools.forEach(t=>{
+    const b=button(t.label,!!t.primary);
+    b.onclick=()=>window.open(t.url,"_blank","noopener,noreferrer");
+    actions.appendChild(b);
+  });
+  panel.append(top,textarea,actions);
+  return panel;
+}
+
+function addBeginnerControls(){
+  document.querySelectorAll<HTMLElement>(".scene-card").forEach((card,index)=>{
+    if(card.querySelector(".beginner-production-controls")) return;
     const promptSection=card.querySelector<HTMLElement>(".prompt-section");
     if(!promptSection) return;
 
-    const wrap=document.createElement("div");
-    wrap.className="scene-production-controls";
-    wrap.style.cssText="border-top:1px solid #e8e0d7;margin-top:18px;padding-top:16px;display:flex;flex-direction:column;gap:12px";
+    const original=currentVideoPrompt(card);
+    const wrap=document.createElement("section");
+    wrap.className="beginner-production-controls";
+    wrap.style.cssText="border-top:2px solid #304674;margin-top:20px;padding-top:18px;display:grid;gap:14px";
 
-    const note=document.createElement("div");
-    note.textContent="✓ 확정된 기획안의 인물·공간·대사 연속성을 현재 Scene에 적용합니다.";
-    note.style.cssText="font-size:13px;color:#8a6f5a";
+    const now=document.createElement("div");
+    now.style.cssText="background:#eef3fb;border-radius:10px;padding:12px 14px;color:#304674;font-size:13px;line-height:1.6";
+    now.innerHTML=`<strong>SCENE ${String(index+1).padStart(2,"0")} · 지금 할 일</strong><br>① 이미지 프롬프트를 확인·수정하고 복사 → Gemini 또는 ChatGPT에서 이미지 생성<br>② 완성 이미지를 준비한 뒤 영상 프롬프트를 확인·수정하고 복사 → Google Flow에서 영상 생성`;
 
-    const actions=document.createElement("div");
-    actions.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+    const imagePanel=promptPanel(
+      "IMAGE PROMPT",
+      "한 장의 기준 이미지를 만드는 프롬프트입니다. 움직임보다 인물·공간·구도·분위기를 확인하세요.",
+      imagePromptFrom(original),
+      [
+        {label:"Gemini에서 만들기 ↗",url:URLS.gemini},
+        {label:"ChatGPT에서 만들기 ↗",url:URLS.chatgpt},
+      ]
+    );
 
-    const imageBtn=makeButton("▣ 이미지 프롬프트 복사");
-    imageBtn.onclick=async()=>{
-      const videoPrompt=card.querySelector<HTMLElement>(".prompt")?.innerText || promptSection.querySelector("textarea")?.value || "";
-      const imagePrompt=videoPrompt
-        .replace(/video clip/gi,"cinematic still image")
-        .replace(/Korean dialogue exactly:[\s\S]*?Maintain the same character/i,"Maintain the same character");
-      await navigator.clipboard.writeText(imagePrompt);
-      alert("이미지 프롬프트를 복사했습니다.");
-    };
+    const videoPanel=promptPanel(
+      "VIDEO PROMPT",
+      "만든 이미지를 영상으로 움직이기 위한 프롬프트입니다. 행동·카메라·장면 연속성을 확인하세요.",
+      original,
+      [
+        {label:"Google Flow에서 만들기 ↗",url:URLS.flow},
+      ]
+    );
 
-    const vidsBtn=makeButton("▣ Vids용 복사");
-    vidsBtn.onclick=async()=>{
-      const videoPrompt=card.querySelector<HTMLElement>(".prompt")?.innerText || promptSection.querySelector("textarea")?.value || "";
-      await navigator.clipboard.writeText(videoPrompt);
-      alert("Vids용 프롬프트를 복사했습니다.");
-    };
+    const tip=document.createElement("div");
+    tip.style.cssText="font-size:11px;color:#6b7280;line-height:1.6";
+    tip.textContent="※ 수정 내용과 사용자 작업물은 서버에 저장하지 않습니다. 도구 버튼은 새 탭에서 열립니다.";
 
-    const openBtn=makeButton("↗ GOOGLE VIDS 열기",true);
-    openBtn.onclick=()=>window.open("https://vids.google.com/","_blank","noopener,noreferrer");
-
-    actions.append(imageBtn,vidsBtn,openBtn);
-    wrap.append(note,actions);
+    wrap.append(now,imagePanel,videoPanel,tip);
     promptSection.insertAdjacentElement("afterend",wrap);
   });
 }
 
-function getInfoValue(label:string){
-  const cards=[...document.querySelectorAll<HTMLElement>(".info-card")];
-  const target=cards.find(card=>card.querySelector(".card-label b")?.textContent?.trim()===label);
-  return target?.querySelector<HTMLElement>("p")?.innerText.trim() || target?.querySelector<HTMLTextAreaElement>("textarea")?.value.trim() || "";
-}
-
-function buildDreaminaPrompt(){
-  const sceneCards=[...document.querySelectorAll<HTMLElement>(".scene-card")];
-  if(!sceneCards.length) return "";
-
-  const protagonist=getInfoValue("프로젝트 제목") ? getInfoValue("전체 스토리") : "";
-  const story=getInfoValue("전체 스토리");
-  const message=getInfoValue("핵심 메시지");
-  const sceneLength=30/sceneCards.length;
-
-  const beats=sceneCards.map((card,i)=>{
-    const title=card.querySelector<HTMLElement>("h4")?.innerText.trim() || `Scene ${i+1}`;
-    const fields=[...card.querySelectorAll<HTMLElement>(".scene-field")];
-    const read=(label:string)=>{
-      const f=fields.find(x=>x.querySelector("b")?.textContent?.trim()===label);
-      return f?.querySelector<HTMLElement>("p")?.innerText.trim().replace(/^“|”$/g,"") || f?.querySelector<HTMLTextAreaElement>("textarea")?.value.trim() || "";
-    };
-    const start=Math.round(i*sceneLength*10)/10;
-    const end=Math.round((i+1)*sceneLength*10)/10;
-    return `${start}-${end}s | ${title}\nVisual: ${read("장면 설명")}\nAction: ${read("주요 행동")}\nMood: ${read("감정 / 분위기")}\nDialogue: ${read("대사 또는 내레이션") || "No dialogue; use natural ambient sound."}`;
-  }).join("\n\n");
-
-  const firstPrompt=sceneCards[0]?.querySelector<HTMLElement>(".prompt")?.innerText || "";
-  const bibleMatch=firstPrompt.match(/STORY BIBLE:\s*([\s\S]*?)\s*Protagonist\(s\):/i);
-  const continuity=bibleMatch?.[1]?.trim() || "Keep exactly the same protagonist faces, age, hairstyle, wardrobe, shoes, bags, accessories and recurring props throughout all scenes. Never change costume or replace the protagonists. Preserve chronological time and location continuity.";
-
-  return `Create ONE continuous 30-second cinematic video. Do not generate separate disconnected clips.\n\nOverall story: ${story || protagonist}\nCore message: ${message}\n\nCONTINUITY LOCK: ${continuity}\nThe first scene establishes the character appearance, wardrobe, props and location. Treat these as immutable references for the entire 30 seconds. Every next beat must begin from the exact physical, emotional and spatial state where the previous beat ended. No wardrobe changes, face changes, hairstyle changes, new replacement characters, unexplained prop changes or location resets.\n\n30-SECOND TIMELINE:\n${beats}\n\nUse smooth cinematic transitions so the sequence feels like one uninterrupted story. Keep Korean dialogue natural and only where listed. Preserve realistic Korean environments, consistent lighting progression and spatial direction. No captions, titles, logos or watermarks.`;
-}
-
-function addDreaminaProductionSection(){
-  const plan=document.querySelector<HTMLElement>(".plan-doc");
-  const sceneList=plan?.querySelector<HTMLElement>(".scene-list");
-  if(!plan || !sceneList || plan.querySelector(".dreamina-production")) return;
-
-  const section=document.createElement("section");
-  section.className="dreamina-production";
-  section.style.cssText="margin-top:34px;padding-top:28px;border-top:2px solid #2f2925";
-
-  const heading=document.createElement("h3");
-  heading.className="number-title";
-  heading.innerHTML="<span>04</span> DREAMINA 30초 전체 제작";
-
-  const box=document.createElement("div");
-  box.style.cssText="border:1px solid #e3d9cf;border-radius:8px;padding:20px;background:#fffaf5;display:flex;flex-direction:column;gap:14px";
-
-  const title=document.createElement("strong");
-  title.textContent="Scene별 기획을 하나의 연속된 30초 영상 프롬프트로 통합합니다.";
-
-  const note=document.createElement("div");
-  note.textContent="✓ 전체 스토리 + 고정 인물·의상·소품 + Scene 순서 + 대사를 한 번에 적용합니다.";
-  note.style.cssText="font-size:13px;color:#8a6f5a";
-
-  const actions=document.createElement("div");
-  actions.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
-
-  const copyBtn=makeButton("▣ Dreamina 30초 전체 프롬프트 복사");
-  copyBtn.onclick=async()=>{
-    const prompt=buildDreaminaPrompt();
-    if(!prompt){alert("먼저 Scene 기획을 생성해주세요.");return;}
-    await navigator.clipboard.writeText(prompt);
-    alert("Dreamina 30초 전체 프롬프트를 복사했습니다.");
-  };
-
-  const openBtn=makeButton("↗ DREAMINA 열기",true);
-  openBtn.onclick=()=>window.open("https://dreamina.capcut.com/","_blank","noopener,noreferrer");
-
-  actions.append(copyBtn,openBtn);
-  box.append(title,note,actions);
-  section.append(heading,box);
-  sceneList.insertAdjacentElement("afterend",section);
-}
-
-function refreshProductionControls(){
+function refresh(){
   ensureGateLogo();
   addMainHeaderLogo();
-  addSceneProductionControls();
-  addDreaminaProductionSection();
+  addBeginnerControls();
 }
 
-const sceneObserver=new MutationObserver(()=>refreshProductionControls());
-sceneObserver.observe(document.body,{childList:true,subtree:true});
-refreshProductionControls();
+const observer=new MutationObserver(()=>refresh());
+observer.observe(document.body,{childList:true,subtree:true});
+refresh();
