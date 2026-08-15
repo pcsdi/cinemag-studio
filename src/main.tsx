@@ -66,8 +66,7 @@ function addSceneProductionControls(){
     const actions=document.createElement("div");
     actions.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
 
-    const imageBtn=makeButton("▣ 이미지 프롬프트 복사");
-    imageBtn.onclick=async()=>{
+    const getImagePrompt=()=>{
       const fields=[...card.querySelectorAll<HTMLElement>(".scene-field")];
       const read=(label:string)=>{
         const f=fields.find(x=>x.querySelector("b")?.textContent?.trim()===label);
@@ -79,9 +78,25 @@ function addSceneProductionControls(){
       const videoPrompt=card.querySelector<HTMLElement>(".prompt")?.innerText || promptSection.querySelector<HTMLTextAreaElement>("textarea")?.value || "";
       const bibleMatch=videoPrompt.match(/STORY BIBLE:\s*([\s\S]*?)\s*Protagonist\(s\):/i);
       const continuity=bibleMatch?.[1]?.trim() || "Keep the same protagonist face, hairstyle, age, wardrobe, shoes, bags, accessories and recurring props as the established character reference.";
-      const imagePrompt=`Create ONE cinematic still image for ${title}.\n\nSCENE: ${description}\nMOOD: ${mood}\nCHARACTER CONTINUITY: ${continuity}\n\nCompose a single decisive frozen moment that best represents this scene. Focus on character appearance, facial expression, pose, environment, props, lighting, color, depth, framing and camera angle. Preserve exact character identity and wardrobe continuity. Use a realistic Korean environment when relevant.\n\nSTATIC IMAGE ONLY: no animation, no motion sequence, no shot progression, no transition, no timeline, no duration instructions, no spoken dialogue, no subtitles, no captions, no logos, no watermark. Do not describe what happens before or after this frame.`;
-      await navigator.clipboard.writeText(imagePrompt);
+      return `Create ONE cinematic still image for ${title}.\n\nSCENE: ${description}\nMOOD: ${mood}\nCHARACTER CONTINUITY: ${continuity}\n\nCompose a single decisive frozen moment that best represents this scene. Focus on character appearance, facial expression, pose, environment, props, lighting, color, depth, framing and camera angle. Preserve exact character identity and wardrobe continuity. Use a realistic Korean environment when relevant.\n\nSTATIC IMAGE ONLY: no animation, no motion sequence, no shot progression, no transition, no timeline, no duration instructions, no spoken dialogue, no subtitles, no captions, no logos, no watermark. Do not describe what happens before or after this frame.`;
+    };
+
+    const imageBtn=makeButton("▣ 이미지 프롬프트 복사");
+    imageBtn.onclick=async()=>{
+      await navigator.clipboard.writeText(getImagePrompt());
       alert("이미지 전용 프롬프트를 복사했습니다.");
+    };
+
+    const gptImageBtn=makeButton("↗ GPT 이미지 만들기");
+    gptImageBtn.onclick=async()=>{
+      await navigator.clipboard.writeText(getImagePrompt());
+      window.open("https://chatgpt.com/","_blank","noopener,noreferrer");
+    };
+
+    const geminiImageBtn=makeButton("↗ Gemini 이미지 만들기");
+    geminiImageBtn.onclick=async()=>{
+      await navigator.clipboard.writeText(getImagePrompt());
+      window.open("https://gemini.google.com/","_blank","noopener,noreferrer");
     };
 
     const vidsBtn=makeButton("▣ Vids용 복사");
@@ -94,7 +109,7 @@ function addSceneProductionControls(){
     const openBtn=makeButton("↗ GOOGLE VIDS 열기",true);
     openBtn.onclick=()=>window.open("https://vids.google.com/","_blank","noopener,noreferrer");
 
-    actions.append(imageBtn,vidsBtn,openBtn);
+    actions.append(imageBtn,gptImageBtn,geminiImageBtn,vidsBtn,openBtn);
     wrap.append(note,actions);
     promptSection.insertAdjacentElement("afterend",wrap);
   });
