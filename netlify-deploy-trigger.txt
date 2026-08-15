@@ -1,0 +1,2 @@
+Deploy trigger for latest CINEMAG main build.
+Triggered after state-reset fix.
