@@ -84,21 +84,54 @@ function makeVoicePlan(topic:string,count:number){
   return count===3?[generic[0],generic[2],generic[5]]:generic.slice(0,count);
 }
 
+function makeAudioPlan(topic:string,index:number,count:number){
+  const t=topic.replace(/\s+/g," ").trim();
+  const has=(...keys:string[])=>keys.some(k=>t.includes(k));
+  const opening=index===0, ending=index===count-1;
+
+  if(has("불꽃","불꽃놀이","불꽃축제")) return {
+    bgm: opening?"Warm youthful cinematic music with light anticipation.":ending?"Emotional cinematic music that gently resolves after the fireworks climax.":"Energetic cinematic music that gradually builds excitement toward the fireworks climax.",
+    ambient: opening?"Han River breeze, distant crowd murmur, footsteps and park ambience.":ending?"Fading fireworks echoes, river ambience, footsteps and distant crowd movement.":"Crowd reactions, Han River ambience, firework launch sounds and realistic explosions synchronized with the visuals."
+  };
+  if(has("어린이집","보육","교사","선생님","영아","유아")) return {
+    bgm: opening?"Soft reflective piano and warm ambient pads, slightly tired but gentle.":ending?"Warm hopeful acoustic and piano music with a calm emotional resolution.":"Light modern documentary music that becomes brighter as the workflow improves.",
+    ambient: opening?"Quiet classroom after-hours ambience, soft keyboard clicks, paper handling and distant room tone.":ending?"Natural classroom play sounds, soft children laughter and gentle room ambience.":"Subtle classroom ambience, smartphone voice recording sound and restrained computer interface sounds."
+  };
+  if(has("진로","직업","진학","커리어")) return {
+    bgm: opening?"Thoughtful minimal piano with a slightly uncertain mood.":ending?"Bright hopeful indie-cinematic music suggesting direction and possibility.":"Light inspiring electronic-acoustic music that gradually gains confidence.",
+    ambient: opening?"Quiet school or study-room ambience, pencil writing and soft page turns.":ending?"Natural school ambience, light footsteps and subtle workspace sounds.":"Keyboard typing, notebook writing, soft classroom ambience and subtle device interaction sounds."
+  };
+  if(has("창업","사업","아이디어","고객","문제발견")) return {
+    bgm: opening?"Clean modern minimal beat with a thoughtful, problem-solving tone.":ending?"Confident upbeat innovation music with a concise finish.":"Focused modern startup-style electronic rhythm that builds momentum without becoming aggressive.",
+    ambient: opening?"Quiet workspace ambience, pen on paper, keyboard clicks and soft office room tone.":ending?"Subtle team workspace ambience, page movement and light device sounds.":"Natural meeting-room sounds, keyboard typing, note-taking and restrained notification sounds."
+  };
+  if(has("여행","관광","바다","산","캠핑","공원")) return {
+    bgm: opening?"Bright travel acoustic music with a sense of anticipation.":ending?"Warm reflective travel music with a relaxed ending.":"Light upbeat travel music matching the pace and scenery.",
+    ambient:"Use realistic location-specific nature and travel ambience such as wind, footsteps, distant voices, water, birds or traffic only when appropriate to the scene."
+  };
+  if(has("음식","요리","카페","맛집","베이킹")) return {
+    bgm:"Light cheerful lifestyle music that matches the food and social mood.",
+    ambient:"Realistic cooking, tableware, café room tone, sizzling, pouring or serving sounds only when they match the scene."
+  };
+  if(has("수업","교육","강의","학교","학습","학생")) return {
+    bgm: opening?"Calm curious educational background music.":ending?"Warm motivating educational music with a clear finish.":"Light focused educational music that supports concentration.",
+    ambient:"Natural classroom ambience, page turns, writing, keyboard sounds and quiet student reactions appropriate to the scene."
+  };
+  return {
+    bgm:`Background music should match the subject "${t}", the current scene mood, and the story progression. Start gently, develop naturally, and resolve appropriately at the ending.`,
+    ambient:`Use only realistic ambient sounds that naturally belong to the subject "${t}" and the current scene location and action. Do not add unrelated stock sound effects.`
+  };
+}
+
 function makeScenes(topic:string,count:number,ratio:string,duration:string):Scene[]{
   const sec=Math.max(3,Math.round((parseInt(duration)||30)/count));
   const beats=makeVoicePlan(topic,count);
-  const isFireworks=/불꽃|불꽃놀이|불꽃축제/.test(topic);
   return beats.map((beat,i)=>{
     const continuity=i===0?"This is the opening scene.":`Continue naturally from Scene ${i}. Keep the same protagonist, face, hairstyle, clothing, props, location logic and screen direction.`;
     const imagePrompt=`Create ONE photorealistic cinematic still image.\n\nSUBJECT: ${topic}\nSCENE: ${beat.title}\nVISUAL: ${beat.description}\nCONTINUITY: ${continuity}\nCHARACTER LOCK: Keep the exact same face, age, hairstyle, body type, clothing, shoes, accessories and recurring props across every scene.\nCOMPOSITION: One decisive, physically plausible instant with a clear focal point and natural depth of field.\nSTYLE: realistic cinematic lighting, natural Korean environment, coherent visual continuity.\nASPECT RATIO: ${ratio}.\nOUTPUT: One still image only. No text, captions, titles, logos, watermarks or split panels.`;
     const voiceInstruction=beat.voiceType==="없음"?"VOICE: No spoken dialogue or narration.":beat.voiceType==="대사"?`DIALOGUE: Speak this Korean line once, naturally and briefly: \"${beat.voiceText}\"`: `NARRATION: Use this Korean narration once in a calm, natural tone: \"${beat.voiceText}\"`;
-    const bgm=isFireworks
-      ? (i===0?"BGM: Warm youthful cinematic music with light anticipation, soft and unobtrusive.":i===count-1?"BGM: Emotional cinematic music that gently resolves after the fireworks climax.":"BGM: Cinematic music that gradually builds excitement toward the fireworks climax.")
-      : "BGM: Soft cinematic background music matching the scene mood, kept below dialogue or narration.";
-    const ambient=isFireworks
-      ? (i===0?"AMBIENT SOUND: Gentle Han River breeze, distant crowd murmur, footsteps and soft park ambience.":i===count-1?"AMBIENT SOUND: Fading fireworks echoes, river ambience, footsteps and distant crowd movement.":"AMBIENT SOUND: Natural crowd reactions, Han River ambience, firework launch sounds and realistic explosions synchronized with the visuals.")
-      : "AMBIENT SOUND: Natural location-specific environmental sound synchronized with the scene.";
-    const videoPrompt=`Animate the approved Scene ${i+1} image into a ${sec}-second cinematic video clip.\n\nSTORY: ${topic}\nCURRENT SCENE: ${beat.title}\nACTION: ${beat.description}\nCAMERA MOVEMENT: Use one restrained cinematic camera movement only.\nENVIRONMENT MOVEMENT: Add subtle realistic environmental motion.\nCONTINUITY: ${continuity}\nCHARACTER LOCK: Do not change face, age, hairstyle, body type, clothing, shoes, accessories or props.\n${bgm}\n${ambient}\n${voiceInstruction}\nAUDIO MIX: Keep music under the voice, preserve realistic ambient sound, and avoid overpowering effects.\nDURATION: about ${sec} seconds.\nSTYLE: realistic cinematic lighting, natural Korean environment, smooth motion.\nOUTPUT: No captions, titles, logos or watermarks.`;
+    const audio=makeAudioPlan(topic,i,count);
+    const videoPrompt=`Animate the approved Scene ${i+1} image into a ${sec}-second cinematic video clip.\n\nSTORY: ${topic}\nCURRENT SCENE: ${beat.title}\nACTION: ${beat.description}\nCAMERA MOVEMENT: Use one restrained cinematic camera movement only.\nENVIRONMENT MOVEMENT: Add subtle realistic environmental motion.\nCONTINUITY: ${continuity}\nCHARACTER LOCK: Do not change face, age, hairstyle, body type, clothing, shoes, accessories or props.\nBGM: ${audio.bgm}\nAMBIENT SOUND: ${audio.ambient}\n${voiceInstruction}\nAUDIO MIX: Balance BGM, ambient sound and voice according to this scene. Voice must remain clear when present, important real-world sounds should remain audible, and no audio element should overpower the scene.\nDURATION: about ${sec} seconds.\nSTYLE: realistic cinematic lighting, natural Korean environment, smooth motion.\nOUTPUT: No captions, titles, logos or watermarks.`;
     return{title:beat.title,description:beat.description,imagePrompt,videoPrompt,voiceType:beat.voiceType,voiceText:beat.voiceText,caption:beat.caption};
   });
 }
