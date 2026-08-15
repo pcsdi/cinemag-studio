@@ -68,12 +68,20 @@ function addSceneProductionControls(){
 
     const imageBtn=makeButton("▣ 이미지 프롬프트 복사");
     imageBtn.onclick=async()=>{
-      const videoPrompt=card.querySelector<HTMLElement>(".prompt")?.innerText || promptSection.querySelector("textarea")?.value || "";
-      const imagePrompt=videoPrompt
-        .replace(/video clip/gi,"cinematic still image")
-        .replace(/Korean dialogue exactly:[\s\S]*?Maintain the same character/i,"Maintain the same character");
+      const fields=[...card.querySelectorAll<HTMLElement>(".scene-field")];
+      const read=(label:string)=>{
+        const f=fields.find(x=>x.querySelector("b")?.textContent?.trim()===label);
+        return f?.querySelector<HTMLElement>("p")?.innerText.trim().replace(/^“|”$/g,"") || f?.querySelector<HTMLTextAreaElement>("textarea")?.value.trim() || "";
+      };
+      const title=card.querySelector<HTMLElement>("h4")?.innerText.trim() || "Scene";
+      const description=read("장면 설명");
+      const mood=read("감정 / 분위기");
+      const videoPrompt=card.querySelector<HTMLElement>(".prompt")?.innerText || promptSection.querySelector<HTMLTextAreaElement>("textarea")?.value || "";
+      const bibleMatch=videoPrompt.match(/STORY BIBLE:\s*([\s\S]*?)\s*Protagonist\(s\):/i);
+      const continuity=bibleMatch?.[1]?.trim() || "Keep the same protagonist face, hairstyle, age, wardrobe, shoes, bags, accessories and recurring props as the established character reference.";
+      const imagePrompt=`Create ONE cinematic still image for ${title}.\n\nSCENE: ${description}\nMOOD: ${mood}\nCHARACTER CONTINUITY: ${continuity}\n\nCompose a single decisive frozen moment that best represents this scene. Focus on character appearance, facial expression, pose, environment, props, lighting, color, depth, framing and camera angle. Preserve exact character identity and wardrobe continuity. Use a realistic Korean environment when relevant.\n\nSTATIC IMAGE ONLY: no animation, no motion sequence, no shot progression, no transition, no timeline, no duration instructions, no spoken dialogue, no subtitles, no captions, no logos, no watermark. Do not describe what happens before or after this frame.`;
       await navigator.clipboard.writeText(imagePrompt);
-      alert("이미지 프롬프트를 복사했습니다.");
+      alert("이미지 전용 프롬프트를 복사했습니다.");
     };
 
     const vidsBtn=makeButton("▣ Vids용 복사");
