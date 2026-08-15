@@ -74,11 +74,22 @@ function addSceneProductionControls(){
       };
       const title=card.querySelector<HTMLElement>("h4")?.innerText.trim() || "Scene";
       const description=read("장면 설명");
+      const action=read("주요 행동");
       const mood=read("감정 / 분위기");
       const videoPrompt=card.querySelector<HTMLElement>(".prompt")?.innerText || promptSection.querySelector<HTMLTextAreaElement>("textarea")?.value || "";
-      const bibleMatch=videoPrompt.match(/STORY BIBLE:\s*([\s\S]*?)\s*Protagonist\(s\):/i);
-      const continuity=bibleMatch?.[1]?.trim() || "Keep the same protagonist face, hairstyle, age, wardrobe, shoes, bags, accessories and recurring props as the established character reference.";
-      return `Create ONE cinematic still image for ${title}.\n\nSCENE: ${description}\nMOOD: ${mood}\nCHARACTER CONTINUITY: ${continuity}\n\nCompose a single decisive frozen moment that best represents this scene. Focus on character appearance, facial expression, pose, environment, props, lighting, color, depth, framing and camera angle. Preserve exact character identity and wardrobe continuity. Use a realistic Korean environment when relevant.\n\nSTATIC IMAGE ONLY: no animation, no motion sequence, no shot progression, no transition, no timeline, no duration instructions, no spoken dialogue, no subtitles, no captions, no logos, no watermark. Do not describe what happens before or after this frame.`;
+      const pick=(label:string)=>{
+        const m=videoPrompt.match(new RegExp(`${label}:\\s*([^\\n]+)`,"i"));
+        return m?.[1]?.trim() || "";
+      };
+      const story=pick("STORY");
+      const subject=pick("SUBJECT");
+      const setting=pick("SETTING");
+      const bibleMatch=videoPrompt.match(/CHARACTER BIBLE:\s*([\s\S]*?)\s*SUBJECT:/i);
+      const continuity=bibleMatch?.[1]?.trim() || "Preserve the same established character identity, face, hairstyle, age, wardrobe, accessories and recurring props when a recurring character exists.";
+      const ratioMatch=videoPrompt.match(/continuous cinematic\s+([^\s]+)\s+story/i);
+      const ratio=ratioMatch?.[1]?.trim() || "16:9";
+      const ratioGuide=ratio==="9:16"?"vertical portrait composition":ratio==="1:1"?"square composition":ratio==="4:3"?"classic landscape composition":"wide landscape composition";
+      return `Create ONE photorealistic cinematic still image based only on the current story topic and current Scene.\n\nASPECT RATIO: ${ratio}. Compose specifically for a ${ratioGuide}; do not crop or convert to another ratio.\n\nSTORY TOPIC: ${story || title}\nSUBJECT: ${subject || "Use the exact subject implied by this Scene and story topic."}\nLOCATION: ${setting || "Use the exact location implied by this Scene and story topic."}\nCHARACTER CONSISTENCY: ${continuity}\n\nCURRENT SCENE: ${title}. ${description}\nFROZEN MOMENT: ${action || description}\nEMOTIONAL TONE: ${mood}\n\nIMAGE DIRECTION: Interpret the current story topic freely and specifically. Show only details that belong to this exact Scene. If the topic changes, the people, place, props, atmosphere and visual details must change with it unless the story explicitly establishes recurring characters or objects. Do not reuse fireworks, picnic mats, classrooms, students, teachers, offices or any other previous-topic element unless the current story actually requires them. Capture one decisive, physically plausible instant with a clear focal point, natural depth of field, realistic scale, coherent composition and lighting appropriate to the current place and time.\n\nSTATIC IMAGE ONLY: no animation, no motion sequence, no shot progression, no transition, no timeline, no camera movement, no spoken dialogue, no subtitles, no captions, no logos, no watermark.`;
     };
 
     const imageBtn=makeButton("▣ 이미지 프롬프트 복사");
